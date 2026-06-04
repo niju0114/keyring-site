@@ -1,0 +1,11 @@
+# Local Netlify folder
+.netlify
+
+# Dependencies
+node_modules
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store

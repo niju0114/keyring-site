@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>내 키링 프로필</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;1,9..144,400&family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{ --accent:#FF6F61; --ink:#123A44; --muted:#5E7C84; --bg1:#5FD0EA; --bg2:#2AA6C8;
+    --serif:'Gowun Batang',serif; --latin:'Fraunces',serif; --body:'Gowun Dodum',sans-serif; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:var(--body); color:var(--ink); min-height:100dvh; }
+
+  .screen{ position:relative; min-height:100dvh; overflow:hidden; }
+  .defbg{ position:fixed; inset:0; z-index:0; background:linear-gradient(165deg,var(--bg1),var(--bg2)); }
+  .defbg::after{ content:""; position:absolute; inset:0; opacity:.5;
+    background:radial-gradient(50% 32% at 26% 16%, rgba(255,255,255,.35), transparent 60%),
+              radial-gradient(40% 26% at 82% 30%, rgba(255,255,255,.22), transparent 60%); }
+  .bg{ position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; display:none; }
+  .bg.show{ display:block; }
+  .scrim{ position:fixed; inset:0; z-index:1; pointer-events:none;
+    background:linear-gradient(180deg, rgba(0,25,35,.10) 0%, transparent 22%, transparent 50%, rgba(5,30,40,.22) 100%); }
+  .content{ position:relative; z-index:2; min-height:100dvh; display:flex; flex-direction:column;
+    justify-content:flex-end; align-items:center; padding:64px 16px 90px; }
+
+  .card{ width:100%; max-width:420px; }
+  .glass{ position:relative; border-radius:26px; padding:0 22px 22px;
+    background:rgba(255,255,255,.64); -webkit-backdrop-filter:blur(20px) saturate(1.15); backdrop-filter:blur(20px) saturate(1.15);
+    border:1px solid rgba(255,255,255,.72); box-shadow:0 22px 44px -22px rgba(10,40,50,.5); }
+  .avatar{ width:92px; height:92px; margin:-44px auto 0; border-radius:50%; border:4px solid rgba(255,255,255,.95);
+    background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center; overflow:hidden;
+    box-shadow:0 10px 22px -10px rgba(10,40,50,.55); }
+  .avatar svg{ width:78%; height:78%; } .avatar img{ width:100%; height:100%; object-fit:cover; }
+  .acc{ text-align:center; font-family:var(--latin); font-style:italic; color:var(--accent); font-size:12.5px; margin-top:9px; }
+  .nm{ text-align:center; font-family:var(--serif); font-weight:700; font-size:26px; }
+  .mb{ display:flex; justify-content:center; margin-top:7px; }
+  .mb span{ font-family:var(--latin); font-size:11.5px; letter-spacing:.16em; color:#fff; background:var(--accent); border-radius:7px; padding:4px 12px; }
+  .bio{ font-family:var(--serif); font-size:14px; line-height:1.7; color:#3A494E; text-align:center; margin-top:13px;
+    padding-bottom:14px; border-bottom:1px solid rgba(18,58,68,.12); white-space:pre-wrap; }
+  .rows{ margin-top:4px; }
+  .r{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(18,58,68,.1); }
+  .r:last-child{ border-bottom:none; }
+  .r .ico{ width:33px; height:33px; flex:0 0 auto; border-radius:9px; background:rgba(255,255,255,.7);
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px -3px rgba(10,40,50,.4); }
+  .r .ico svg{ width:18px; height:18px; }
+  .r .k{ font-size:11px; color:var(--muted); } .r .v{ font-size:14px; color:var(--ink); }
+  .r .txt{ display:flex; flex-direction:column; }
+  .ft{ text-align:center; font-family:var(--latin); font-style:italic; font-size:10.5px; color:var(--muted); margin-top:16px; }
+
+  /* 비어있는 키링 안내 */
+  .empty{ text-align:center; padding:34px 10px; }
+  .empty .em{ font-size:44px; } .empty h2{ font-family:var(--serif); font-weight:700; font-size:20px; margin-top:10px; }
+  .empty p{ font-size:13px; color:var(--muted); margin-top:8px; line-height:1.6; }
+  .empty .go{ margin-top:18px; border:none; cursor:pointer; background:var(--accent); color:#fff; font-family:var(--serif); font-weight:700;
+    padding:13px 26px; border-radius:12px; font-size:15px; box-shadow:0 12px 24px -14px var(--accent); }
+
+  /* 수정(✏️) 버튼 — 단 하나 */
+  .fab{ position:fixed; right:18px; bottom:22px; z-index:5; border:none; cursor:pointer; width:54px; height:54px; border-radius:50%;
+    background:#fff; color:var(--accent); font-size:22px; box-shadow:0 14px 30px -12px rgba(10,40,50,.6); }
+
+  /* 편집 시트 */
+  .sheet{ position:fixed; inset:0; z-index:20; background:rgba(10,40,50,.45); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+    display:none; align-items:flex-end; }
+  .sheet.show{ display:flex; }
+  .sheetbody{ width:100%; max-height:92vh; overflow-y:auto; background:#F4FAFC; border-radius:24px 24px 0 0; padding:22px 18px calc(26px + env(safe-area-inset-bottom)); }
+  .sheetbody h2{ font-family:var(--serif); font-weight:700; font-size:20px; text-align:center; }
+  .sheetbody .sub{ text-align:center; font-size:12.5px; color:var(--muted); margin:5px 0 14px; }
+  .f{ display:block; font-family:var(--serif); font-size:13px; color:var(--muted); margin:13px 0 6px; }
+  .f span{ font-size:11.5px; }
+  .t{ width:100%; border:none; border-radius:10px; padding:12px 13px; font-family:var(--body); font-size:15px; background:#fff; color:var(--ink); box-shadow:inset 0 0 0 1px #DCE9EC; }
+  .t:focus{ outline:none; box-shadow:inset 0 0 0 1.5px var(--accent); }
+  .pair{ display:flex; gap:7px; margin-bottom:7px; } .pair .t:first-child{ flex:0 0 38%; }
+  .bgup{ position:relative; height:92px; border-radius:14px; overflow:hidden; cursor:pointer; border:2px dashed #BFE0E6;
+    background:linear-gradient(160deg,var(--bg1),var(--bg2)); display:flex; align-items:center; justify-content:center; }
+  .bgup img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .bgup .ph{ position:relative; z-index:1; color:#fff; font-size:12.5px; display:flex; gap:7px; align-items:center; text-shadow:0 1px 4px rgba(0,0,0,.3); }
+  .bgrow{ display:flex; gap:8px; margin-top:6px; } .bgrow button{ flex:1; border:none; cursor:pointer; font-family:var(--body); font-size:11.5px; padding:7px; border-radius:8px; background:#E7F1F3; color:var(--muted); }
+  .suits{ display:grid; grid-template-columns:repeat(6,1fr); gap:7px; }
+  .suit{ aspect-ratio:1; border:1.5px solid #DCE9EC; border-radius:11px; background:#EAF7FB; cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; }
+  .suit svg{ width:100%; height:100%; } .suit.on{ box-shadow:0 0 0 2px var(--accent); border-color:var(--accent); }
+  .swatches{ display:flex; gap:9px; } .sw{ width:32px; height:32px; border-radius:50%; cursor:pointer; border:2px solid #fff; box-shadow:0 2px 7px rgba(0,0,0,.18); }
+  .sw.on{ outline:2px solid var(--ink); outline-offset:2px; }
+  .err{ color:#C0564B; font-size:12.5px; margin-top:8px; text-align:center; min-height:16px; }
+  .btns{ display:flex; gap:9px; margin-top:14px; }
+  .save{ flex:1; border:none; cursor:pointer; background:var(--accent); color:#fff; font-family:var(--serif); font-weight:700; padding:14px; border-radius:12px; font-size:15px; box-shadow:0 12px 24px -14px var(--accent); }
+  .cancel{ flex:0 0 auto; border:none; cursor:pointer; background:#E7F1F3; color:var(--muted); font-family:var(--serif); font-weight:700; padding:14px 18px; border-radius:12px; }
+  .demo-note{ position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:6; font-size:11px; color:#fff;
+    background:rgba(0,0,0,.3); padding:5px 12px; border-radius:999px; display:none; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="defbg"></div>
+  <img class="bg" id="bg" alt="">
+  <div class="scrim"></div>
+  <div class="demo-note" id="demoNote">미리보기 모드 (배포 후 저장됩니다)</div>
+  <div class="content"><div class="card" id="card"></div></div>
+  <button class="fab" id="fab" title="수정">✏️</button>
+</div>
+
+<div class="sheet" id="sheet"><div class="sheetbody">
+  <h2 id="sheetTitle">내 프로필 만들기</h2>
+  <div class="sub" id="sheetSub">이 키링은 아직 비어있어요. 채우면 활성화돼요.</div>
+
+  <label class="f">배경 사진 <span>(내 사진을 올리면 배경이 돼요)</span></label>
+  <div class="bgup" id="bgup"><img id="bgPrev" style="display:none"><span class="ph" id="bgPh"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="8.5" cy="10.5" r="2"/><path d="M4 18l5-4 4 3 3-2 4 3"/></svg>탭해서 사진 올리기</span></div>
+  <div class="bgrow"><button id="bgClear">사진 빼기 (기본 배경)</button></div>
+  <input type="file" id="bgFile" accept="image/*" hidden>
+
+  <label class="f">이름</label><input class="t" id="i-name" maxlength="20" placeholder="예: 김수영">
+  <label class="f">MBTI · 취미</label>
+  <div class="pair"><input class="t" id="i-mbti" placeholder="ENFP" maxlength="4"><input class="t" id="i-hobby" placeholder="취미" maxlength="30"></div>
+  <label class="f">한 줄 소개</label><input class="t" id="i-bio" maxlength="80" placeholder="나를 한 줄로!">
+  <label class="f">수영복 고르기 <span>(아바타)</span></label>
+  <div class="suits" id="suits"></div>
+  <label class="f">내 최애 <span>(자유)</span></label>
+  <div class="pair"><input class="t cl" placeholder="최애 수영복" maxlength="14"><input class="t cv" maxlength="24"></div>
+  <div class="pair"><input class="t cl" placeholder="최애 장소" maxlength="14"><input class="t cv" maxlength="24"></div>
+  <div class="pair"><input class="t cl" placeholder="최애 노래" maxlength="14"><input class="t cv" maxlength="24"></div>
+  <label class="f">테마 색</label><div class="swatches" id="swatches"></div>
+
+  <label class="f" id="pinLabel">잠금 PIN <span>(나만 수정할 수 있게)</span></label>
+  <input class="t" id="i-pin" inputmode="numeric" maxlength="8" placeholder="숫자 4자리 이상 (예: 1234)">
+
+  <div class="err" id="err"></div>
+  <div class="btns"><button class="save" id="save">완성하고 저장</button><button class="cancel" id="cancel">취소</button></div>
+</div></div>
+
+<script>
+  const C="#fff";
+  const SWIMSUITS=[
+    `<svg viewBox="0 0 64 64"><rect x="25" y="15" width="3.5" height="13" rx="1.75" fill="var(--accent)"/><rect x="35.5" y="15" width="3.5" height="13" rx="1.75" fill="var(--accent)"/><path d="M23 25 q9 5 18 0 l-2.2 19 q-6.8 5 -13.6 0 z" fill="var(--accent)"/><path d="M23.9 31 q8 4 16.2 0 l-.5 4.2 q-7.6 3.6 -15.2 0 z" fill="${C}"/></svg>`,
+    `<svg viewBox="0 0 64 64"><path d="M18 25 q6.5 -2.5 12 1.5 q-3.5 7.5 -12 5.5 z" fill="var(--accent)"/><path d="M46 25 q-6.5 -2.5 -12 1.5 q3.5 7.5 12 5.5 z" fill="var(--accent)"/><rect x="29" y="26.5" width="6" height="2.6" rx="1.3" fill="var(--accent)"/><path d="M23 40 q9 3 18 0 q-2.5 9 -9 11 q-6.5 -2 -9 -11 z" fill="var(--accent)"/></svg>`,
+    `<svg viewBox="0 0 64 64"><path d="M24 22 l-9 5.5 3.6 7 4.4-2.4 v13 q9 3.4 18 0 v-13 l4.4 2.4 3.6-7 -9-5.5 q-8 4 -16 0 z" fill="var(--accent)"/><rect x="22" y="36" width="20" height="2.2" fill="${C}"/><rect x="22" y="40.5" width="20" height="2.2" fill="${C}"/></svg>`,
+    `<svg viewBox="0 0 64 64"><rect x="20" y="26" width="24" height="5" rx="2.2" fill="var(--accent)"/><path d="M20 30.5 h24 v9 q0 6 -5.2 6 h-3.3 l-3.5 -7 -3.5 7 h-3.3 q-5.2 0 -5.2 -6 z" fill="var(--accent)"/><path d="M30 28 v3.2 M34 28 v3.2" stroke="${C}" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+    `<svg viewBox="0 0 64 64"><rect x="20" y="24" width="24" height="6.5" rx="3.2" fill="var(--accent)"/><rect x="20" y="26.6" width="24" height="1.6" fill="${C}"/><path d="M22 37 h20 v6.5 q-3 8 -10 8 q-7 0 -10 -8 z" fill="var(--accent)"/><rect x="22.4" y="40.4" width="19.2" height="1.6" fill="${C}"/><rect x="23.5" y="44.6" width="17" height="1.6" fill="${C}"/></svg>`,
+    `<svg viewBox="0 0 64 64"><rect x="25" y="15" width="3.5" height="13" rx="1.75" fill="var(--accent)"/><rect x="35.5" y="15" width="3.5" height="13" rx="1.75" fill="var(--accent)"/><path d="M23 25 q9 5 18 0 l-2.2 19 q-6.8 5 -13.6 0 z" fill="var(--accent)"/><g fill="${C}"><circle cx="29" cy="31" r="1.3"/><circle cx="35" cy="31" r="1.3"/><circle cx="32" cy="36" r="1.3"/><circle cx="28.5" cy="40" r="1.3"/><circle cx="35.5" cy="40" r="1.3"/></g></svg>`,
+  ];
+  const THEMES=[{a:"#FF6F61",b1:"#5FD0EA",b2:"#2AA6C8"},{a:"#1FB6D4",b1:"#7BE0D6",b2:"#28B0A8"},{a:"#FFB72B",b1:"#FFD98A",b2:"#F2A93C"},
+    {a:"#FF7FA3",b1:"#FFC3D4",b2:"#F58BA8"},{a:"#54C06A",b1:"#A6E6B0",b2:"#4FB86A"},{a:"#4AA8F0",b1:"#A9D6FF",b2:"#4AA8F0"}];
+  const ICONS={ pin:`<svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>`,
+    note:`<svg viewBox="0 0 24 24" fill="var(--accent)"><circle cx="7" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M10 18V6.5l8-1.8V16h-2V7l-4 .9V18z"/></svg>`,
+    suit:`<svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M3.5 8.5c2-1 4.5-.8 5.5 1-1 2.8-4.8 2.6-5.5-1z"/><path d="M20.5 8.5c-2-1-4.5-.8-5.5 1 1 2.8 4.8 2.6 5.5-1z"/><path d="M8.5 14h7c-.2 3.2-1.8 5.5-3.5 5.5S8.7 17.2 8.5 14z"/></svg>`,
+    star:`<svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 3.2l2.4 5.6 6.1.5-4.6 4 1.4 6-5.3-3.2L6.4 19l1.4-6-4.6-4 6.1-.5z"/></svg>`,
+    heart:`<svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z"/></svg>` };
+  function iconFor(l){ l=l||""; if(l.includes("장소")||l.includes("곳"))return ICONS.pin; if(l.includes("노래")||l.includes("음악")||l.includes("곡"))return ICONS.note;
+    if(l.includes("수영복")||l.includes("옷"))return ICONS.suit; if(l.includes("취미"))return ICONS.star; return ICONS.heart; }
+
+  // 키링 코드 (?k=...) — 키링마다 다름. 없으면 demo.
+  const KEY = (new URLSearchParams(location.search).get("k") || "demo").trim();
+
+  let P = null;          // 저장된 프로필 (없으면 null)
+  let hasPin = false;    // 이 키링에 PIN이 걸려있나
+  let localMode = false; // 배포 전(미리보기) 모드
+  let draftBg = null;    // 편집 중 배경 사진(base64)
+
+  const $=id=>document.getElementById(id);
+  function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+  function applyTheme(i){ const t=THEMES[i]||THEMES[0]; const r=document.documentElement.style;
+    r.setProperty("--accent",t.a); r.setProperty("--bg1",t.b1); r.setProperty("--bg2",t.b2); }
+  function setBg(img){ const el=$("bg"); if(img){ el.src=img; el.classList.add("show"); } else { el.classList.remove("show"); el.removeAttribute("src"); } }
+
+  function renderView(){
+    if(P){ applyTheme(P.c||0); setBg(P.bgImg||null); }
+    else { applyTheme(0); setBg(null); }
+    const card=$("card");
+    if(!P){
+      card.innerHTML=`<div class="glass"><div class="empty"><div class="em">🌊</div>
+        <h2>비어있는 키링이에요</h2><p>오른쪽 아래 ✏️ 를 눌러<br>내 프로필을 만들어 활성화하세요.</p>
+        <button class="go" id="goEdit">＋ 내 프로필 만들기</button></div></div>`;
+      $("goEdit").onclick=openSheet;
+      return;
+    }
+    const av=P.bgImg
+      ? `<div class="avatar"><span>${SWIMSUITS[P.sw||0]}</span></div>`   // 사진 배경이어도 아바타는 수영복
+      : `<div class="avatar"><span>${SWIMSUITS[P.sw||0]}</span></div>`;
+    const all=(P.h?[{l:"취미",v:P.h}]:[]).concat(P.items||[]);
+    const rows=all.map(it=>`<div class="r"><div class="ico">${iconFor(it.l)}</div><div class="txt"><span class="k">${esc(it.l)}</span><span class="v">${esc(it.v)}</span></div></div>`).join("");
+    card.innerHTML=`<div class="glass">${av}<div class="acc">summer profile</div>
+      <div class="nm">${esc(P.n||"이름")}</div>${P.m?`<div class="mb"><span>${esc(P.m)}</span></div>`:""}
+      ${P.b?`<div class="bio">${esc(P.b)}</div>`:""}<div class="rows">${rows}</div>
+      <div class="ft">made with care · keyring</div></div>`;
+  }
+
+  // ---- 편집 시트 ----
+  function buildSuits(){ const su=$("suits"); su.innerHTML="";
+    SWIMSUITS.forEach((s,i)=>{ const b=document.createElement("div"); b.className="suit"; b.innerHTML=s; b.dataset.i=i;
+      b.onclick=()=>{ su.querySelectorAll(".suit").forEach(x=>x.classList.remove("on")); b.classList.add("on"); }; su.appendChild(b); }); }
+  function buildSwatches(){ const sw=$("swatches"); sw.innerHTML="";
+    THEMES.forEach((t,i)=>{ const b=document.createElement("div"); b.className="sw"; b.style.background=t.a; b.dataset.i=i;
+      b.onclick=()=>{ sw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); applyTheme(i); }; sw.appendChild(b); }); }
+
+  function openSheet(){
+    const editing = !!P;
+    $("sheetTitle").textContent = editing ? "프로필 수정" : "내 프로필 만들기";
+    $("sheetSub").textContent = editing ? "내용을 바꾸고 저장하세요." : "이 키링은 아직 비어있어요. 채우면 활성화돼요.";
+    $("err").textContent="";
+    const d = P || {};
+    $("i-name").value=d.n||""; $("i-mbti").value=d.m||""; $("i-hobby").value=d.h||""; $("i-bio").value=d.b||"";
+    const pairs=document.querySelectorAll(".pair");
+    [0,1,2].forEach(k=>{ const it=(d.items||[])[k]; pairs[k+1].querySelector(".cl").value=it?it.l:""; pairs[k+1].querySelector(".cv").value=it?it.v:""; });
+    buildSuits(); buildSwatches();
+    const si=d.sw||0; $("suits").querySelectorAll(".suit")[si]?.classList.add("on");
+    const ci=d.c||0; $("swatches").querySelectorAll(".sw")[ci]?.classList.add("on"); applyTheme(ci);
+    draftBg = d.bgImg||null;
+    if(draftBg){ $("bgPrev").src=draftBg; $("bgPrev").style.display="block"; $("bgPh").style.display="none"; }
+    else { $("bgPrev").style.display="none"; $("bgPrev").removeAttribute("src"); $("bgPh").style.display="flex"; }
+    // PIN 안내
+    $("pinLabel").innerHTML = hasPin ? `잠금 PIN <span>(저장하려면 입력)</span>` : `잠금 PIN <span>(나만 수정할 수 있게)</span>`;
+    $("i-pin").value=""; $("i-pin").placeholder = hasPin ? "기존 PIN 입력" : "숫자 4자리 이상 (예: 1234)";
+    $("save").textContent = editing ? "저장" : "완성하고 저장";
+    $("sheet").classList.add("show");
+  }
+  function closeSheet(){ $("sheet").classList.remove("show"); if(P){ applyTheme(P.c||0); setBg(P.bgImg||null);} }
+
+  function gather(){
+    const items=[]; document.querySelectorAll(".pair").forEach((p,idx)=>{ if(idx===0) return;
+      const l=p.querySelector(".cl").value.trim(), v=p.querySelector(".cv").value.trim(); if(l&&v) items.push({l,v}); });
+    let sw=0; $("suits").querySelectorAll(".suit").forEach((x,i)=>{ if(x.classList.contains("on")) sw=i; });
+    let c=0; $("swatches").querySelectorAll(".sw").forEach((x,i)=>{ if(x.classList.contains("on")) c=i; });
+    return { n:$("i-name").value.trim(), m:$("i-mbti").value.trim().toUpperCase(), h:$("i-hobby").value.trim(),
+      b:$("i-bio").value.trim(), items, sw, c, bgImg:draftBg||null };
+  }
+
+  async function save(){
+    const profile=gather();
+    if(!profile.n){ $("err").textContent="이름은 꼭 적어주세요."; return; }
+    const pin=$("i-pin").value.trim();
+    if(!hasPin && pin && pin.length<4){ $("err").textContent="PIN은 숫자 4자리 이상으로 해주세요."; return; }
+    if(hasPin && !pin){ $("err").textContent="수정하려면 기존 PIN을 입력하세요."; return; }
+    $("save").textContent="저장 중…";
+    try{
+      const r=await fetch(`/api/profile?k=${encodeURIComponent(KEY)}`,{ method:"PUT",
+        headers:{"content-type":"application/json"}, body:JSON.stringify({ profile, pin }) });
+      const j=await r.json();
+      if(j.error==="wrong_pin"){ $("err").textContent="PIN이 틀렸어요."; $("save").textContent="저장"; return; }
+      if(!j.ok){ $("err").textContent="저장에 실패했어요. 잠시 후 다시."; $("save").textContent="저장"; return; }
+      P=profile; hasPin = hasPin || (pin.length>=4); closeSheet(); renderView();
+    }catch(e){
+      // 배포 전 미리보기: 메모리에만 저장
+      localMode=true; $("demoNote").style.display="block"; P=profile; hasPin = hasPin || (pin.length>=4); closeSheet(); renderView();
+    }
+  }
+
+  async function load(){
+    try{
+      const r=await fetch(`/api/profile?k=${encodeURIComponent(KEY)}`);
+      const j=await r.json();
+      if(j.exists){ P=j.profile; hasPin=!!j.hasPin; } else { P=null; hasPin=false; }
+    }catch(e){ localMode=true; $("demoNote").style.display="block"; P=null; hasPin=false; }
+    renderView();
+  }
+
+  // 배경 업로드(압축)
+  $("bgup").onclick=()=>$("bgFile").click();
+  $("bgFile").onchange=e=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(), rd=new FileReader();
+    rd.onload=ev=>{ img.onload=()=>{ const max=1000; const s=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement("canvas"); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height); draftBg=c.toDataURL("image/jpeg",0.7);
+      $("bgPrev").src=draftBg; $("bgPrev").style.display="block"; $("bgPh").style.display="none"; }; img.src=ev.target.result; }; rd.readAsDataURL(f); };
+  $("bgClear").onclick=()=>{ draftBg=null; $("bgPrev").style.display="none"; $("bgPrev").removeAttribute("src"); $("bgPh").style.display="flex"; $("bgFile").value=""; };
+
+  $("fab").onclick=openSheet;
+  $("save").onclick=save;
+  $("cancel").onclick=closeSheet;
+
+  load();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Netlify 설정
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# (참고) Netlify Blobs는 배포 시 자동으로 연결됩니다. 별도 키 설정 불필요.

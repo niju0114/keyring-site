@@ -1,0 +1,10 @@
+{
+  "name": "keyring-profile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "QR/NFC 키링이 가리키는 개인 프로필 사이트",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
