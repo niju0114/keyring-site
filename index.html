@@ -88,6 +88,31 @@
   .cancel{ flex:0 0 auto; border:none; cursor:pointer; background:#E7F1F3; color:var(--muted); font-family:var(--serif); font-weight:700; padding:14px 18px; border-radius:12px; }
   .demo-note{ position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:6; font-size:11px; color:#fff;
     background:rgba(0,0,0,.3); padding:5px 12px; border-radius:999px; display:none; }
+
+  /* 주인 표시 / 미리보기 바 */
+  .ownerbar{ position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:6; display:none; gap:8px; align-items:center; }
+  .badge{ font-size:11.5px; color:#fff; background:rgba(0,0,0,.34); padding:6px 12px; border-radius:999px;
+    -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); }
+  .pvbtn{ border:none; cursor:pointer; font-size:11.5px; color:var(--ink); background:rgba(255,255,255,.9);
+    padding:6px 13px; border-radius:999px; font-family:var(--body); box-shadow:0 5px 14px -7px rgba(10,40,50,.55); }
+  .pvbar{ background:rgba(0,0,0,.46); color:#fff; padding:6px 8px 6px 14px; font-size:11.5px; }
+  .pvbar button{ border:none; cursor:pointer; font-size:11.5px; background:#fff; color:var(--ink);
+    padding:6px 13px; border-radius:999px; font-family:var(--body); }
+  .ownerlink{ display:block; width:100%; margin:16px auto 0; border:none; cursor:pointer; background:transparent;
+    color:rgba(255,255,255,.92); font-family:var(--body); font-size:12px; text-align:center; text-shadow:0 1px 3px rgba(0,0,0,.4); }
+
+  /* 링크 (보기 화면) */
+  .links{ display:flex; flex-direction:column; gap:8px; margin-top:13px; }
+  .lnk{ display:flex; align-items:center; gap:11px; text-decoration:none; padding:11px 13px; border-radius:13px;
+    background:rgba(255,255,255,.7); box-shadow:0 4px 12px -8px rgba(10,40,50,.5); }
+  .lnk .ico{ width:30px; height:30px; flex:0 0 auto; border-radius:9px; background:rgba(255,255,255,.7);
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px -3px rgba(10,40,50,.4); }
+  .lnk .ico svg{ width:18px; height:18px; }
+  .lnk .lt{ font-size:14px; color:var(--ink); font-family:var(--serif); font-weight:700; }
+  .lnk .chev{ margin-left:auto; color:var(--muted); font-size:17px; line-height:1; }
+
+  /* 링크 (편집 시트) */
+  .linkrow{ display:flex; gap:7px; margin-bottom:7px; } .linkrow .t:first-child{ flex:0 0 34%; }
 </style>
 </head>
 <body>
@@ -96,8 +121,9 @@
   <img class="bg" id="bg" alt="">
   <div class="scrim"></div>
   <div class="demo-note" id="demoNote">미리보기 모드 (배포 후 저장됩니다)</div>
+  <div class="ownerbar" id="ownerbar"></div>
   <div class="content"><div class="card" id="card"></div></div>
-  <button class="fab" id="fab" title="수정">✏️</button>
+  <button class="fab" id="fab" title="수정" style="display:none">✏️</button>
 </div>
 
 <div class="sheet" id="sheet"><div class="sheetbody">
@@ -119,6 +145,12 @@
   <div class="pair"><input class="t cl" placeholder="최애 수영복" maxlength="14"><input class="t cv" maxlength="24"></div>
   <div class="pair"><input class="t cl" placeholder="최애 장소" maxlength="14"><input class="t cv" maxlength="24"></div>
   <div class="pair"><input class="t cl" placeholder="최애 노래" maxlength="14"><input class="t cv" maxlength="24"></div>
+
+  <label class="f">링크 <span>(인스타·카톡·유튜브 등 — 친구가 탭하면 이동)</span></label>
+  <div class="linkrow"><input class="t ll" placeholder="이름(예:인스타)" maxlength="14"><input class="t lu" placeholder="https://..." inputmode="url"></div>
+  <div class="linkrow"><input class="t ll" placeholder="이름" maxlength="14"><input class="t lu" placeholder="https://..." inputmode="url"></div>
+  <div class="linkrow"><input class="t ll" placeholder="이름" maxlength="14"><input class="t lu" placeholder="https://..." inputmode="url"></div>
+
   <label class="f">테마 색</label><div class="swatches" id="swatches"></div>
 
   <label class="f" id="pinLabel">잠금 PIN <span>(나만 수정할 수 있게)</span></label>
@@ -144,17 +176,34 @@
     note:`<svg viewBox="0 0 24 24" fill="var(--accent)"><circle cx="7" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M10 18V6.5l8-1.8V16h-2V7l-4 .9V18z"/></svg>`,
     suit:`<svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M3.5 8.5c2-1 4.5-.8 5.5 1-1 2.8-4.8 2.6-5.5-1z"/><path d="M20.5 8.5c-2-1-4.5-.8-5.5 1 1 2.8 4.8 2.6 5.5-1z"/><path d="M8.5 14h7c-.2 3.2-1.8 5.5-3.5 5.5S8.7 17.2 8.5 14z"/></svg>`,
     star:`<svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 3.2l2.4 5.6 6.1.5-4.6 4 1.4 6-5.3-3.2L6.4 19l1.4-6-4.6-4 6.1-.5z"/></svg>`,
-    heart:`<svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z"/></svg>` };
+    heart:`<svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z"/></svg>`,
+    instagram:`<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="var(--accent)" stroke="none"/></svg>`,
+    kakao:`<svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 6l-.9 3.3 3.7-2.2c.6.1 1.3.1 2 .1 5 0 9-3.1 9-7s-4-7-9-7z"/></svg>`,
+    youtube:`<svg viewBox="0 0 24 24" fill="var(--accent)"><rect x="2.5" y="6" width="19" height="12" rx="3.5"/><path d="M10.2 9.3l4.6 2.7-4.6 2.7z" fill="#fff"/></svg>`,
+    link:`<svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M9 14.5l6-6"/><path d="M11 6.5l1.2-1.2a4 4 0 015.6 5.6L16.5 12"/><path d="M13 17.5l-1.2 1.2a4 4 0 01-5.6-5.6L7.5 12"/></svg>` };
   function iconFor(l){ l=l||""; if(l.includes("장소")||l.includes("곳"))return ICONS.pin; if(l.includes("노래")||l.includes("음악")||l.includes("곡"))return ICONS.note;
     if(l.includes("수영복")||l.includes("옷"))return ICONS.suit; if(l.includes("취미"))return ICONS.star; return ICONS.heart; }
+  function linkIcon(u){ u=(u||"").toLowerCase();
+    if(u.includes("instagram")||u.includes("instagr.am"))return ICONS.instagram;
+    if(u.includes("kakao")||u.includes("kko.to"))return ICONS.kakao;
+    if(u.includes("youtu"))return ICONS.youtube;
+    return ICONS.link; }
+  function normalizeUrl(u){ u=(u||"").trim(); if(!u)return ""; if(/^(https?:|mailto:|tel:)/i.test(u))return u; return "https://"+u; }
 
   // 키링 코드 (?k=...) — 키링마다 다름. 없으면 demo.
   const KEY = (new URLSearchParams(location.search).get("k") || "demo").trim();
 
   let P = null;          // 저장된 프로필 (없으면 null)
   let hasPin = false;    // 이 키링에 PIN이 걸려있나
+  let isOwner = false;   // 이 기기가 주인으로 인식됨(주인 토큰 보유)
+  let previewMode = false; // 주인이 '친구가 보는 화면' 미리보기 중
   let localMode = false; // 배포 전(미리보기) 모드
   let draftBg = null;    // 편집 중 배경 사진(base64)
+
+  // 주인 토큰: 기기(localStorage)에 키링별로 저장 → 주인 자동 인식
+  const TKEY = "kr_owner_" + KEY;
+  function getToken(){ try{ return localStorage.getItem(TKEY) || ""; }catch(e){ return ""; } }
+  function setToken(t){ try{ if(t) localStorage.setItem(TKEY, t); }catch(e){} }
 
   const $=id=>document.getElementById(id);
   function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
@@ -165,23 +214,51 @@
   function renderView(){
     if(P){ applyTheme(P.c||0); setBg(P.bgImg||null); }
     else { applyTheme(0); setBg(null); }
+    updateChrome();
     const card=$("card");
     if(!P){
       card.innerHTML=`<div class="glass"><div class="empty"><div class="em">🌊</div>
-        <h2>비어있는 키링이에요</h2><p>오른쪽 아래 ✏️ 를 눌러<br>내 프로필을 만들어 활성화하세요.</p>
+        <h2>비어있는 키링이에요</h2><p>아래 버튼을 눌러<br>내 프로필을 만들어 활성화하세요.</p>
         <button class="go" id="goEdit">＋ 내 프로필 만들기</button></div></div>`;
       $("goEdit").onclick=openSheet;
       return;
     }
-    const av=P.bgImg
-      ? `<div class="avatar"><span>${SWIMSUITS[P.sw||0]}</span></div>`   // 사진 배경이어도 아바타는 수영복
-      : `<div class="avatar"><span>${SWIMSUITS[P.sw||0]}</span></div>`;
+    const av=`<div class="avatar"><span>${SWIMSUITS[P.sw||0]}</span></div>`;
     const all=(P.h?[{l:"취미",v:P.h}]:[]).concat(P.items||[]);
     const rows=all.map(it=>`<div class="r"><div class="ico">${iconFor(it.l)}</div><div class="txt"><span class="k">${esc(it.l)}</span><span class="v">${esc(it.v)}</span></div></div>`).join("");
+    const links=(P.links||[]).filter(l=>l&&l.url);
+    const linksHtml = links.length ? `<div class="links">`+links.map(l=>{ const url=normalizeUrl(l.url);
+      return `<a class="lnk" href="${esc(url)}" target="_blank" rel="noopener"><span class="ico">${linkIcon(url)}</span><span class="lt">${esc(l.label||url)}</span><span class="chev">›</span></a>`;
+    }).join("")+`</div>` : "";
+    const ownerLink = (!isOwner && !previewMode) ? `<button class="ownerlink" id="ownerLink">🔒 주인이세요? 수정하기</button>` : "";
     card.innerHTML=`<div class="glass">${av}<div class="acc">summer profile</div>
       <div class="nm">${esc(P.n||"이름")}</div>${P.m?`<div class="mb"><span>${esc(P.m)}</span></div>`:""}
-      ${P.b?`<div class="bio">${esc(P.b)}</div>`:""}<div class="rows">${rows}</div>
-      <div class="ft">made with care · keyring</div></div>`;
+      ${P.b?`<div class="bio">${esc(P.b)}</div>`:""}<div class="rows">${rows}</div>${linksHtml}
+      <div class="ft">made with care · keyring</div></div>${ownerLink}`;
+    const ol=$("ownerLink"); if(ol) ol.onclick=openSheet;
+  }
+
+  // FAB / 상단 바 (주인·미리보기 상태에 따라)
+  function updateChrome(){
+    const fab=$("fab"), bar=$("ownerbar");
+    if(previewMode){
+      fab.style.display="none";
+      bar.style.display="flex"; bar.classList.add("pvbar");
+      bar.innerHTML=`👁 미리보기 · 친구가 보는 화면 <button id="pvExit">수정으로</button>`;
+      $("pvExit").onclick=()=>{ previewMode=false; renderView(); };
+      return;
+    }
+    bar.classList.remove("pvbar");
+    if(isOwner){
+      fab.style.display="flex";
+      bar.style.display="flex";
+      bar.innerHTML=`<span class="badge">✦ 내 키링</span><button class="pvbtn" id="pvBtn">👁 미리보기</button>`;
+      $("pvBtn").onclick=()=>{ previewMode=true; renderView(); };
+    } else {
+      fab.style.display="none";
+      bar.style.display="none";
+      bar.innerHTML="";
+    }
   }
 
   // ---- 편집 시트 ----
@@ -207,9 +284,17 @@
     draftBg = d.bgImg||null;
     if(draftBg){ $("bgPrev").src=draftBg; $("bgPrev").style.display="block"; $("bgPh").style.display="none"; }
     else { $("bgPrev").style.display="none"; $("bgPrev").removeAttribute("src"); $("bgPh").style.display="flex"; }
-    // PIN 안내
-    $("pinLabel").innerHTML = hasPin ? `잠금 PIN <span>(저장하려면 입력)</span>` : `잠금 PIN <span>(나만 수정할 수 있게)</span>`;
-    $("i-pin").value=""; $("i-pin").placeholder = hasPin ? "기존 PIN 입력" : "숫자 4자리 이상 (예: 1234)";
+    // 링크 채우기
+    const lrows=document.querySelectorAll(".linkrow");
+    [0,1,2].forEach(k=>{ const l=(d.links||[])[k]; lrows[k].querySelector(".ll").value=l?(l.label||""):""; lrows[k].querySelector(".lu").value=l?(l.url||""):""; });
+    // PIN: 주인 토큰이 있는 기기는 재입력 불필요 → 숨김. 그 외(첫 등록·다른 기기)는 표시.
+    const showPin = !isOwner;
+    $("pinLabel").style.display = showPin ? "block" : "none";
+    $("i-pin").style.display = showPin ? "block" : "none";
+    if(showPin){
+      $("pinLabel").innerHTML = hasPin ? `잠금 PIN <span>(수정하려면 입력)</span>` : `잠금 PIN <span>(나만 수정 가능 — 숫자 4자리 이상)</span>`;
+      $("i-pin").value=""; $("i-pin").placeholder = hasPin ? "기존 PIN 입력" : "숫자 4자리 이상 (예: 1234)";
+    } else { $("i-pin").value=""; }
     $("save").textContent = editing ? "저장" : "완성하고 저장";
     $("sheet").classList.add("show");
   }
@@ -218,38 +303,55 @@
   function gather(){
     const items=[]; document.querySelectorAll(".pair").forEach((p,idx)=>{ if(idx===0) return;
       const l=p.querySelector(".cl").value.trim(), v=p.querySelector(".cv").value.trim(); if(l&&v) items.push({l,v}); });
+    const links=[]; document.querySelectorAll(".linkrow").forEach(p=>{
+      const label=p.querySelector(".ll").value.trim(), url=p.querySelector(".lu").value.trim(); if(url) links.push({label, url}); });
     let sw=0; $("suits").querySelectorAll(".suit").forEach((x,i)=>{ if(x.classList.contains("on")) sw=i; });
     let c=0; $("swatches").querySelectorAll(".sw").forEach((x,i)=>{ if(x.classList.contains("on")) c=i; });
     return { n:$("i-name").value.trim(), m:$("i-mbti").value.trim().toUpperCase(), h:$("i-hobby").value.trim(),
-      b:$("i-bio").value.trim(), items, sw, c, bgImg:draftBg||null };
+      b:$("i-bio").value.trim(), items, links, sw, c, bgImg:draftBg||null };
   }
 
   async function save(){
     const profile=gather();
     if(!profile.n){ $("err").textContent="이름은 꼭 적어주세요."; return; }
+    const token=getToken();
+    const useToken = isOwner && !!token;   // 주인 기기 → PIN 없이 토큰으로 저장
     const pin=$("i-pin").value.trim();
-    if(!hasPin && pin && pin.length<4){ $("err").textContent="PIN은 숫자 4자리 이상으로 해주세요."; return; }
-    if(hasPin && !pin){ $("err").textContent="수정하려면 기존 PIN을 입력하세요."; return; }
+    if(!useToken){
+      if(!hasPin){ // 첫 등록 → 잠금 PIN 필수(소유권 확보)
+        if(!pin || pin.length<4){ $("err").textContent="잠금 PIN을 숫자 4자리 이상으로 설정하세요."; return; }
+      } else {     // 다른 기기에서 주인 인증
+        if(!pin){ $("err").textContent="수정하려면 기존 PIN을 입력하세요."; return; }
+      }
+    }
     $("save").textContent="저장 중…";
     try{
+      const payload={ profile };
+      if(useToken) payload.ownerToken=token; else payload.pin=pin;
       const r=await fetch(`/api/profile?k=${encodeURIComponent(KEY)}`,{ method:"PUT",
-        headers:{"content-type":"application/json"}, body:JSON.stringify({ profile, pin }) });
+        headers:{"content-type":"application/json"}, body:JSON.stringify(payload) });
       const j=await r.json();
-      if(j.error==="wrong_pin"){ $("err").textContent="PIN이 틀렸어요."; $("save").textContent="저장"; return; }
+      if(j.error==="too_many"){ const m=Math.max(1,Math.ceil((j.retryAfter||600)/60));
+        $("err").textContent=`시도가 너무 많아 잠겼어요. ${m}분 후 다시 시도하세요.`; $("save").textContent="저장"; return; }
+      if(j.error==="wrong_pin"){ $("err").textContent=`PIN이 틀렸어요.${j.left!=null?` (${j.left}회 남음)`:""}`; $("save").textContent="저장"; return; }
       if(!j.ok){ $("err").textContent="저장에 실패했어요. 잠시 후 다시."; $("save").textContent="저장"; return; }
-      P=profile; hasPin = hasPin || (pin.length>=4); closeSheet(); renderView();
+      if(j.ownerToken) setToken(j.ownerToken);
+      P=profile; hasPin = hasPin || useToken || (pin.length>=4); isOwner=true; previewMode=false;
+      $("save").textContent="저장"; closeSheet(); renderView();
     }catch(e){
-      // 배포 전 미리보기: 메모리에만 저장
-      localMode=true; $("demoNote").style.display="block"; P=profile; hasPin = hasPin || (pin.length>=4); closeSheet(); renderView();
+      // 배포 전(로컬 정적) 미리보기: 메모리에만 저장
+      localMode=true; $("demoNote").style.display="block"; P=profile; closeSheet(); renderView();
     }
   }
 
   async function load(){
     try{
-      const r=await fetch(`/api/profile?k=${encodeURIComponent(KEY)}`);
+      const headers={}; const t=getToken(); if(t) headers["x-owner-token"]=t;
+      const r=await fetch(`/api/profile?k=${encodeURIComponent(KEY)}`,{ headers });
       const j=await r.json();
-      if(j.exists){ P=j.profile; hasPin=!!j.hasPin; } else { P=null; hasPin=false; }
-    }catch(e){ localMode=true; $("demoNote").style.display="block"; P=null; hasPin=false; }
+      if(j.exists){ P=j.profile; hasPin=!!j.hasPin; isOwner=!!j.isOwner; }
+      else { P=null; hasPin=false; isOwner=false; }
+    }catch(e){ localMode=true; $("demoNote").style.display="block"; P=null; hasPin=false; isOwner=false; }
     renderView();
   }
 
