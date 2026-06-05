@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>키링 코드 발급 (관리자)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{ --accent:#FF6F61; --ink:#163A44; --muted:#5E7C84; --bg1:#5FD0EA; --bg2:#2AA6C8;
+    --serif:'Gowun Batang',serif; --body:'Gowun Dodum',sans-serif; --field:#F4FAFC; --border:#DCE9EC; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:var(--body); color:var(--ink); min-height:100dvh;
+    background:linear-gradient(165deg,var(--bg1),var(--bg2)); display:flex; justify-content:center; align-items:flex-start;
+    padding:max(32px,8vh) 16px 48px; }
+  .wrap{ width:100%; max-width:440px; }
+  .glass{ background:rgba(255,255,255,.93); border-radius:24px; padding:26px 22px 24px;
+    box-shadow:0 18px 44px -22px rgba(10,40,50,.45); }
+  h1{ font-family:var(--serif); font-weight:700; font-size:22px; text-align:center; }
+  .sub{ text-align:center; font-size:12.5px; color:var(--muted); margin:6px 0 18px; }
+  .lock{ width:60px; height:60px; margin:0 auto 12px; border-radius:50%; background:rgba(255,111,97,.13);
+    display:flex; align-items:center; justify-content:center; font-size:26px; }
+  label{ display:block; font-family:var(--serif); font-size:13px; color:var(--muted); margin:0 0 6px; }
+  .t{ width:100%; border:none; border-radius:10px; padding:13px 14px; font-family:var(--body); font-size:15px;
+    background:var(--field); color:var(--ink); box-shadow:inset 0 0 0 1px var(--border); }
+  .t:focus{ outline:none; box-shadow:inset 0 0 0 1.5px var(--accent); }
+  .btn{ width:100%; border:none; cursor:pointer; background:var(--accent); color:#fff; font-family:var(--serif); font-weight:700;
+    padding:14px; border-radius:12px; font-size:15px; margin-top:12px; box-shadow:0 8px 18px -12px var(--accent); }
+  .btn.sm{ width:auto; padding:9px 16px; font-size:13.5px; margin:0; box-shadow:none; }
+  .row{ display:flex; gap:8px; align-items:center; }
+  .row .t{ flex:0 0 110px; text-align:center; }
+  .row .btn{ flex:1; margin:0; }
+  .err{ color:#C0564B; font-size:12.5px; margin-top:10px; text-align:center; min-height:16px; }
+  .head{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .head h1{ flex:1; text-align:left; font-size:20px; }
+  .ghost{ border:none; cursor:pointer; background:transparent; color:var(--muted); font-family:var(--body); font-size:13px; }
+  .rhead{ display:flex; align-items:center; gap:8px; margin:16px 0 9px; }
+  .rhead .cnt{ flex:1; font-size:13px; color:var(--ink); }
+  .chip{ border:none; cursor:pointer; background:#E7F1F3; color:var(--muted); font-family:var(--body); font-size:12px; padding:7px 12px; border-radius:8px; }
+  .list{ display:flex; flex-direction:column; gap:7px; max-height:46vh; overflow-y:auto; }
+  .item{ display:flex; align-items:center; gap:8px; padding:11px 11px 11px 13px; border-radius:10px;
+    background:#F6FCFE; box-shadow:inset 0 0 0 1px rgba(18,58,68,.06); }
+  .item .url{ flex:1; font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .item .cp{ border:none; cursor:pointer; background:#E7F1F3; color:var(--muted); font-family:var(--body); font-size:12px; padding:6px 11px; border-radius:8px; flex:0 0 auto; }
+  .item .cp.done{ background:var(--accent); color:#fff; }
+  .hint{ font-size:11.5px; color:var(--muted); text-align:center; margin-top:12px; line-height:1.6; }
+  .hidden{ display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 로그인 -->
+  <div class="glass" id="loginCard">
+    <div class="lock">🔒</div>
+    <h1>키링 코드 발급</h1>
+    <div class="sub">관리자 전용 · 비밀번호를 입력하세요</div>
+    <label>관리자 비밀번호</label>
+    <input class="t" id="pw" type="password" inputmode="text" placeholder="관리자 비밀번호" autocomplete="current-password">
+    <button class="btn" id="enter">들어가기</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+
+  <!-- 발급기 -->
+  <div class="glass hidden" id="genCard">
+    <div class="head"><h1>코드 발급</h1><button class="ghost" id="logout">나가기</button></div>
+    <label>몇 개 만들까요?</label>
+    <div class="row">
+      <input class="t" id="count" type="number" min="1" max="500" value="10" inputmode="numeric">
+      <button class="btn" id="gen">생성하기</button>
+    </div>
+    <div class="rhead">
+      <span class="cnt" id="cnt"></span>
+      <button class="chip hidden" id="copyAll">전체 복사</button>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="hint">주소를 복사해 <b>NFC Tools</b> 앱에 붙여넣어 태그에 쓰세요.<br>각 키링 = 고유 주소 하나. 추측 불가능한 랜덤 코드예요.</div>
+  </div>
+</div>
+
+<script>
+  const $=id=>document.getElementById(id);
+  // 헷갈리는 문자(0/O/1/l/I) 제외한 랜덤 코드
+  const ALPH="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  function genCode(len=10){ const a=new Uint32Array(len); crypto.getRandomValues(a);
+    let s=""; for(let i=0;i<len;i++) s+=ALPH[a[i]%ALPH.length]; return s; }
+  const urlFor=code=>`${location.origin}/?k=${code}`;
+
+  let codes=[];
+
+  async function login(){
+    const pw=$("pw").value;
+    if(!pw){ $("loginErr").textContent="비밀번호를 입력하세요."; return; }
+    $("enter").textContent="확인 중…";
+    try{
+      const r=await fetch("/api/admin-auth",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ password:pw }) });
+      const j=await r.json();
+      $("enter").textContent="들어가기";
+      if(j.error==="not_configured"){ $("loginErr").textContent="서버에 관리자 비밀번호(ADMIN_PASSWORD)가 설정되지 않았어요."; return; }
+      if(!j.ok){ $("loginErr").textContent="비밀번호가 틀렸어요."; return; }
+      $("loginCard").classList.add("hidden"); $("genCard").classList.remove("hidden");
+    }catch(e){ $("enter").textContent="들어가기"; $("loginErr").textContent="연결에 실패했어요. 잠시 후 다시."; }
+  }
+
+  function render(){
+    $("cnt").textContent = codes.length ? `${codes.length}개 생성됨` : "";
+    $("copyAll").classList.toggle("hidden", !codes.length);
+    const list=$("list"); list.innerHTML="";
+    codes.forEach(code=>{
+      const url=urlFor(code);
+      const row=document.createElement("div"); row.className="item";
+      const u=document.createElement("div"); u.className="url"; u.textContent=`…/?k=${code}`; u.title=url;
+      const b=document.createElement("button"); b.className="cp"; b.textContent="복사";
+      b.onclick=async()=>{ await navigator.clipboard.writeText(url); b.textContent="복사됨"; b.classList.add("done"); setTimeout(()=>{ b.textContent="복사"; b.classList.remove("done"); },1200); };
+      row.appendChild(u); row.appendChild(b); list.appendChild(row);
+    });
+  }
+
+  function generate(){
+    let n=parseInt($("count").value,10); if(!n||n<1) n=1; if(n>500) n=500;
+    const set=new Set();
+    while(set.size<n) set.add(genCode(10));
+    codes=[...set]; render();
+  }
+
+  $("enter").onclick=login;
+  $("pw").addEventListener("keydown",e=>{ if(e.key==="Enter") login(); });
+  $("logout").onclick=()=>{ $("genCard").classList.add("hidden"); $("loginCard").classList.remove("hidden"); $("pw").value=""; codes=[]; };
+  $("gen").onclick=generate;
+  $("copyAll").onclick=async()=>{ await navigator.clipboard.writeText(codes.map(urlFor).join("\n")); $("copyAll").textContent="복사됨!"; setTimeout(()=>$("copyAll").textContent="전체 복사",1200); };
+</script>
+</body>
+</html>
