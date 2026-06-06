@@ -347,14 +347,11 @@
     // 링크 채우기
     const lrows=document.querySelectorAll(".linkrow");
     [0,1,2].forEach(k=>{ const l=(d.links||[])[k]; lrows[k].querySelector(".ll").value=l?(l.label||""):""; lrows[k].querySelector(".lu").value=l?(l.url||""):""; });
-    // PIN: 주인 토큰이 있는 기기는 재입력 불필요 → 숨김. 그 외(첫 등록·다른 기기)는 표시.
-    const showPin = !isOwner;
-    $("pinLabel").style.display = showPin ? "block" : "none";
-    $("i-pin").style.display = showPin ? "block" : "none";
-    if(showPin){
-      $("pinLabel").innerHTML = hasPin ? `잠금 PIN <span>(수정하려면 입력)</span>` : `잠금 PIN <span>(나만 수정 가능 — 숫자 4자리 이상)</span>`;
-      $("i-pin").value=""; $("i-pin").placeholder = hasPin ? "기존 PIN 입력" : "숫자 4자리 이상 (예: 1234)";
-    } else { $("i-pin").value=""; }
+    // PIN: 수정할 땐 항상 입력 (주인 폰에서도). 첫 등록이면 PIN 설정.
+    $("pinLabel").style.display = "block";
+    $("i-pin").style.display = "block";
+    $("pinLabel").innerHTML = hasPin ? `잠금 PIN <span>(수정하려면 입력)</span>` : `잠금 PIN <span>(나만 수정 가능 — 숫자 4자리 이상)</span>`;
+    $("i-pin").value=""; $("i-pin").placeholder = hasPin ? "기존 PIN 입력" : "숫자 4자리 이상 (예: 1234)";
     $("save").textContent = editing ? "저장" : "완성하고 저장";
     $("sheet").classList.add("show");
   }
@@ -376,20 +373,15 @@
   async function save(){
     const profile=gather();
     if(!profile.n){ $("err").textContent="이름은 꼭 적어주세요."; return; }
-    const token=getToken();
-    const useToken = isOwner && !!token;   // 주인 기기 → PIN 없이 토큰으로 저장
     const pin=$("i-pin").value.trim();
-    if(!useToken){
-      if(!hasPin){ // 첫 등록 → 잠금 PIN 필수(소유권 확보)
-        if(!pin || pin.length<4){ $("err").textContent="잠금 PIN을 숫자 4자리 이상으로 설정하세요."; return; }
-      } else {     // 다른 기기에서 주인 인증
-        if(!pin){ $("err").textContent="수정하려면 기존 PIN을 입력하세요."; return; }
-      }
+    if(!hasPin){ // 첫 등록 → 잠금 PIN 설정(소유권 확보)
+      if(!pin || pin.length<4){ $("err").textContent="잠금 PIN을 숫자 4자리 이상으로 설정하세요."; return; }
+    } else {     // 수정 → 항상 PIN 입력
+      if(!pin){ $("err").textContent="수정하려면 PIN을 입력하세요."; return; }
     }
     $("save").textContent="저장 중…";
     try{
-      const payload={ profile };
-      if(useToken) payload.ownerToken=token; else payload.pin=pin;
+      const payload={ profile, pin };
       const r=await fetch(`/api/profile?k=${encodeURIComponent(KEY)}`,{ method:"PUT",
         headers:{"content-type":"application/json"}, body:JSON.stringify(payload) });
       const j=await r.json();
@@ -398,7 +390,7 @@
       if(j.error==="wrong_pin"){ $("err").textContent=`PIN이 틀렸어요.${j.left!=null?` (${j.left}회 남음)`:""}`; $("save").textContent="저장"; return; }
       if(!j.ok){ $("err").textContent="저장에 실패했어요. 잠시 후 다시."; $("save").textContent="저장"; return; }
       if(j.ownerToken) setToken(j.ownerToken);
-      P=profile; hasPin = hasPin || useToken || (pin.length>=4); isOwner=true; previewMode=false;
+      P=profile; hasPin = hasPin || (pin.length>=4); isOwner=true; previewMode=false;
       $("save").textContent="저장"; closeSheet(); renderView();
     }catch(e){
       // 진짜 실패는 숨기지 말고 보여준다(왜 안 되는지 알 수 있게)
