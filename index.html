@@ -57,7 +57,7 @@
     padding:13px 26px; border-radius:12px; font-size:15px; box-shadow:0 8px 18px -12px var(--accent); }
 
   /* 수정(✏️) 버튼 — 단 하나 */
-  .fab{ position:fixed; right:18px; bottom:22px; z-index:5; border:none; cursor:pointer; width:52px; height:52px; border-radius:50%;
+  .fab{ position:fixed; right:calc(18px + env(safe-area-inset-right)); bottom:calc(22px + env(safe-area-inset-bottom)); z-index:5; border:none; cursor:pointer; width:52px; height:52px; border-radius:50%;
     background:#fff; color:var(--accent); font-size:21px; box-shadow:0 8px 22px -10px rgba(10,40,50,.45); }
 
   /* 편집 시트 */
@@ -102,11 +102,11 @@
   .btns{ display:flex; gap:9px; margin-top:14px; }
   .save{ flex:1; border:none; cursor:pointer; background:var(--accent); color:#fff; font-family:var(--serif); font-weight:700; padding:14px; border-radius:12px; font-size:15px; box-shadow:0 8px 18px -12px var(--accent); }
   .cancel{ flex:0 0 auto; border:none; cursor:pointer; background:#E7F1F3; color:var(--muted); font-family:var(--serif); font-weight:700; padding:14px 18px; border-radius:12px; }
-  .demo-note{ position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:6; font-size:11px; color:#fff;
-    background:rgba(0,0,0,.3); padding:5px 12px; border-radius:999px; display:none; }
+  .demo-note{ position:fixed; top:calc(10px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:7; font-size:11px; color:#fff; max-width:92vw; text-align:center;
+    background:rgba(0,0,0,.42); padding:6px 13px; border-radius:999px; display:none; }
 
   /* 주인 표시 / 미리보기 바 */
-  .ownerbar{ position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:6; display:none; gap:8px; align-items:center; }
+  .ownerbar{ position:fixed; top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:6; display:none; gap:8px; align-items:center; }
   .badge{ font-size:11.5px; color:#fff; background:rgba(0,0,0,.34); padding:6px 12px; border-radius:999px;
     -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); }
   .pvbtn{ border:none; cursor:pointer; font-size:11.5px; color:var(--ink); background:rgba(255,255,255,.9);
@@ -401,8 +401,9 @@
       P=profile; hasPin = hasPin || useToken || (pin.length>=4); isOwner=true; previewMode=false;
       $("save").textContent="저장"; closeSheet(); renderView();
     }catch(e){
-      // 배포 전(로컬 정적) 미리보기: 메모리에만 저장
-      localMode=true; $("demoNote").style.display="block"; P=profile; closeSheet(); renderView();
+      // 진짜 실패는 숨기지 말고 보여준다(왜 안 되는지 알 수 있게)
+      $("err").textContent="저장 실패 — 인터넷 연결을 확인하고 다시 시도하세요.";
+      $("save").textContent="저장";
     }
   }
 
@@ -428,7 +429,10 @@
 
   // 꾸미기: 자유 색 선택(실시간) + 모든 입력 실시간 미리보기
   $("i-color").addEventListener("input", e=>{ draftAc=e.target.value; });
-  $("sheet").addEventListener("input", livePreview);
+  // 모바일 버벅임 방지: 입력 실시간 미리보기는 디바운스
+  let _lpTimer=null;
+  function lpDebounced(){ clearTimeout(_lpTimer); _lpTimer=setTimeout(livePreview, 180); }
+  $("sheet").addEventListener("input", lpDebounced);
 
   // 아바타: 종류 토글 + 사진 업로드(정사각 중앙크롭 + 압축)
   $("avTabSuit").onclick=()=>setAvTab("suit");
@@ -444,6 +448,10 @@
   $("fab").onclick=openSheet;
   $("save").onclick=save;
   $("cancel").onclick=closeSheet;
+
+  // 앱 내 브라우저(카톡/인스타 등)는 저장소가 막혀 '주인 기억'이 안 될 수 있음 → 안내
+  let storageOK=true; try{ localStorage.setItem("_kr_t","1"); localStorage.removeItem("_kr_t"); }catch(e){ storageOK=false; }
+  if(!storageOK){ $("demoNote").textContent="앱 안에서 연 브라우저예요. 저장은 되지만 '주인 기억'이 안 될 수 있어요 — Safari·Chrome로 열면 좋아요."; $("demoNote").style.display="block"; }
 
   load();
 </script>
